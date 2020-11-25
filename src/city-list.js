@@ -1,6 +1,8 @@
 import moment from "moment";
 import React from "react";
 import ReactDataGrid from "react-data-grid";
+import DateRangePicker from 'react-bootstrap-daterangepicker';
+import 'bootstrap-daterangepicker/daterangepicker.css';
   
 const ColorFormatter = ({ value }) => {
     return <div  style={{ backgroundColor: value, padding: "10px" }}/>;
@@ -86,11 +88,10 @@ export default class CityList extends React.Component{
         super(props);
         this.state = {
           data: [],
-          inputStart: "01/01/2013",
-          inputFinish: "01/01/2013"
+          startDate: "",
+          endDate: ""
         }
-        this.handleEvent = this.handleEvent.bind(this);
-    this.inputRef = React.createRef();
+        this.setDates =this.setDates.bind(this);
       }
 
       componentDidMount() {
@@ -104,6 +105,24 @@ export default class CityList extends React.Component{
           });
       }
 
+      componentDidUpdate(prevProps, prevState) {
+        if(prevState.startDate !== this.state.startDate || prevState.endDate !==this.state.endDate){
+          let Start_date = moment(this.state.startDate).format("MM/DD/YYYY");
+    let End_date = moment(this.state.endDate).format("MM/DD/YYYY");
+
+        const apiUrl = 'http://localhost:3300/api/cities/?startDate='+Start_date+"&endDate="+End_date;
+        fetch(apiUrl)
+          .then((response) => response.json())
+          .then((data) => {
+              if(data.length >0){
+                this.setState({data: data});
+              }else{
+                this.setState({data: []});
+              }
+          });
+        }
+      }
+
       handleChangeS = event => {
         event.preventDefault();
         event.stopPropagation();
@@ -114,19 +133,33 @@ export default class CityList extends React.Component{
         this.setState({ inputFinish: event.target.value });
       };
     
-      handleEvent(event, picker) {
-        console.log(event);
+      setDates = (event, picker) =>{
         this.setState({
-          inputStart: picker.startDate.format("DD/MM/YYYY"),
-          inputFinish: picker.endDate.format("DD/MM/YYYY")
+          startDate: picker.startDate.format("MM/DD/YYYY"),
+          endDate: picker.endDate.format("MM/DD/YYYY")
         });
-      }
+      };
 
       render() {
         const rows = this.state.data ? this.state.data :[];
 
         return (
         <div>
+            <DateRangePicker
+        onApply={this.setDates}
+        autoApply={true}
+        showDropdowns={true}
+        onChange={()=> undefined}
+        startDate="01/01/2013"
+        endDate="01/04/2020"
+      >
+        <input
+          type="text"
+          value={this.state.startDate!=="" ? this.state.startDate + " to " + this.state.endDate: "Filter By Date"}
+          className="form-control"
+        />
+      </DateRangePicker>
+      <br/>
         <ReactDataGrid
             columns={columns}
             rowGetter={i => rows[i]}
